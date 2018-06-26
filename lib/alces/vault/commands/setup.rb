@@ -6,12 +6,13 @@ module Alces
       class Setup
         def setup(args, opts)
           # detect if there's already a key
-          if Vault.manager.key
-            STDERR.puts "Already has a key"
-            puts Vault.manager.key.inspect
+          k = Vault.manager.key
+          if k
+            prompt.error "You already have a key"
+            puts [k.sha, k.name, k.email].join(' ')
             return
           end
-          STDERR.puts "No key yet"
+          prompt.warn "No key detected; proceeding with key generation."
           name = prompt.ask('Name:')
           email = prompt.ask('Email address:')
           password = prompt.mask('Password:')
