@@ -31,7 +31,6 @@ EOF
           'PASSWORD' => password
         }
         params = KEY_PARAMS.gsub(/%(.*?)%/) {|m| vals[$1]}
-        puts params.inspect
         GPGME::Ctx.new do |ctx|
           ctx.generate_key(params)
         end

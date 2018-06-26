@@ -112,7 +112,7 @@ module Alces
           retval = YAML.load(Vault.gpg.decrypt(encrypted_data).read)
         end
         retval
-      rescue GPGME::Error::DecryptFailed, S3::Error::NoSuchKey
+      rescue S3::Error::NoSuchKey
         {}
       end
 

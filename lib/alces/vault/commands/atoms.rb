@@ -6,6 +6,11 @@ module Alces
     module Commands
       class Atoms
         def show(args, opts)
+          if Vault.manager.key.nil?
+            prompt.error "No key detected; try 'vault setup'"
+            return
+          end
+
           data = Vault.data
           k = args[0]
           if k.nil?
@@ -21,9 +26,16 @@ module Alces
               puts atom.to_yaml
             end
           end
+        rescue GPGME::Error::DecryptFailed
+          prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         end
 
         def delete(args, opts)
+          if Vault.manager.key.nil?
+            prompt.error "No key detected; try 'vault setup'"
+            return
+          end
+
           if args.empty?
             prompt.error "This operation requires a key"
             return
@@ -33,14 +45,28 @@ module Alces
             data.set(k, nil)
           end
           prompt.ok "Atom removed from vault: #{k}"
+        rescue GPGME::Error::DecryptFailed
+          prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         end
 
         def touch(args, opts)
+          if Vault.manager.key.nil?
+            prompt.error "No key detected; try 'vault setup'"
+            return
+          end
+
           Vault.data.save
           prompt.ok "Vault now available to: #{Vault.manager.recipients.join(", ")}"
+        rescue GPGME::Error::DecryptFailed
+          prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         end
 
         def edit(args, opts)
+          if Vault.manager.key.nil?
+            prompt.error "No key detected; try 'vault setup'"
+            return
+          end
+
           if args.empty?
             prompt.error "This operation requires a key"
             return
@@ -74,6 +100,8 @@ module Alces
             end
           end
           prompt.ok "Atom updated: #{k}"
+        rescue GPGME::Error::DecryptFailed
+          prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         rescue TTY::Reader::InputInterrupt
           return
         end
