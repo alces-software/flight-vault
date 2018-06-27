@@ -6,6 +6,11 @@ module Alces
     module Commands
       class Atoms
         def show(args, opts)
+          if Process.uid == 0
+            prompt.warn "Running as root - you should use your own user!"
+          elsif STDOUT.stat.uid == 0
+            prompt.warn "Terminal is owned by root (and you aren't root), password entry may fail!"
+          end
           if Vault.manager.key.nil?
             prompt.error "No key detected; try 'vault setup'"
             return
