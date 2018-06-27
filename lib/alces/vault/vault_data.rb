@@ -12,7 +12,6 @@ module Alces
       delegate :[]=, :[], :keys, :delete, to: :@data
 
       def save
-        Vault.log('save')
         Whirly.start(spinner: 'star',
                      remove_after_stop: true,
                      append_newline: false,
@@ -22,6 +21,7 @@ module Alces
           obj.save
           obj.copy(key: "vault/vault-backup-#{Time.now.strftime('%Y-%m-%d-%H%M')}.dat")
         end
+        Vault.log('save')
       end
 
       def fetch(k)
@@ -37,7 +37,6 @@ module Alces
       end
 
       def set(k, v)
-        Vault.log('set', k)
         if k.include?('.')
           keys = k.split('.')
           target = keys.pop
@@ -80,6 +79,7 @@ module Alces
             self[k] = v
           end
         end
+        Vault.log((v.nil? ? 'delete' : 'set'), k)
       end
 
       def all_keys(max_depth = 0, depth = 0, parent = nil, pk = nil)
