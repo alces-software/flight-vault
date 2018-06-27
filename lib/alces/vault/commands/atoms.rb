@@ -89,10 +89,13 @@ module Alces
                         end
               if TTY::Editor.open(file.path, content: content)
                 content = File.read(file.path).chomp
+                yaml_content = YAML.load(content) rescue nil
                 data.set(
                   k,
                   if content[0..3] == "---\n"
-                    YAML.load(content) rescue content
+                    yaml_content
+                  elsif yaml_content.is_a?(Hash)
+                    yaml_content
                   else
                     content
                   end
