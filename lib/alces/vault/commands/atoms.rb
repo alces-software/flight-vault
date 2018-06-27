@@ -6,12 +6,7 @@ module Alces
     module Commands
       class Atoms
         def show(args, opts)
-          if Process.uid == 0
-            prompt.warn "Running as root - you should use your own user!"
-          elsif STDOUT.stat.uid == 0
-            prompt.warn "Terminal is owned by root (and you aren't root), password entry may fail!"
-            prompt.warn "Are you running under `su` or `sudo`? Don't. :)"
-          end
+          warnings
           if Vault.manager.key.nil?
             prompt.error "No key detected; try 'vault setup'"
             return
@@ -37,6 +32,7 @@ module Alces
         end
 
         def delete(args, opts)
+          warnings
           if Vault.manager.key.nil?
             prompt.error "No key detected; try 'vault setup'"
             return
@@ -68,6 +64,7 @@ module Alces
         end
 
         def edit(args, opts)
+          warnings
           if Vault.manager.key.nil?
             prompt.error "No key detected; try 'vault setup'"
             return
@@ -115,6 +112,15 @@ module Alces
         private
         def prompt
           @prompt ||= TTY::Prompt.new(help_color: :cyan)
+        end
+
+        def warnings
+          if Process.uid == 0
+            prompt.warn "Running as root - you should use your own user!"
+          elsif STDOUT.stat.uid == 0
+            prompt.warn "Terminal is owned by root (and you aren't root), password entry may fail!"
+            prompt.warn "Are you running under `su` or `sudo`? Don't. :)"
+          end
         end
       end
     end

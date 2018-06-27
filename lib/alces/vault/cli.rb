@@ -19,6 +19,7 @@ module Alces
           c.option '--depth DEPTH', Integer
           c.action Commands::Atoms, :show
         end
+        alias_command :list, :show
 
         command :edit do |c|
           c.syntax = 'vault edit <key>'
@@ -26,6 +27,7 @@ module Alces
           c.description = 'Edit an entry in the Alces Flight vault.'
           c.action Commands::Atoms, :edit
         end
+        alias_command :set, :edit
 
         command :delete do |c|
           c.syntax = 'vault delete <key>'
@@ -33,6 +35,7 @@ module Alces
           c.description = 'Delete an entry from the Alces Flight vault.'
           c.action Commands::Atoms, :delete
         end
+        alias_command :rm, :delete
 
         command :setup do |c|
           c.syntax = 'vault setup'
