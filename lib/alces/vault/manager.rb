@@ -24,6 +24,7 @@ EOF
       end
 
       def generate_key(name, email, password)
+        Vault.log('newkey',name)
         vals = {
           'NAME' => name,
           'COMMENT' => 'Flight Vault',

@@ -14,7 +14,11 @@ module Alces
       def save
         File.write(config_path, @data.to_yaml)
       end
-      
+
+      def log_path
+        @data[:log_path] ||= "/var/log/flight-vault.log"
+      end
+
       private
       def root
         @root ||= File.join(File.dirname(__FILE__),'..','..','..')

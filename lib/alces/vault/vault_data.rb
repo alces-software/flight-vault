@@ -12,6 +12,7 @@ module Alces
       delegate :[]=, :[], :keys, :delete, to: :@data
 
       def save
+        Vault.log('save')
         Whirly.start(spinner: 'star',
                      remove_after_stop: true,
                      append_newline: false,
@@ -24,6 +25,7 @@ module Alces
       end
 
       def fetch(k)
+        Vault.log('fetch', k)
         keys = k.split('.')
         atom = @data[keys.shift]
         keys.each do |key|
@@ -35,6 +37,7 @@ module Alces
       end
 
       def set(k, v)
+        Vault.log('set', k)
         if k.include?('.')
           keys = k.split('.')
           target = keys.pop
@@ -103,6 +106,7 @@ module Alces
       end
 
       def load
+        Vault.log('load')
         retval = nil
         Whirly.start(spinner: 'star',
                      remove_after_stop: true,

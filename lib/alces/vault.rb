@@ -5,6 +5,7 @@ require 'alces/vault/config'
 
 require 'gpgme'
 require 's3'
+require 'logger'
 
 module Alces
   module Vault
@@ -27,6 +28,15 @@ module Alces
         @config ||= Config.new
       end
 
+      def log(op, *params)
+        msg = "#{uname} - #{op}".tap do |s|
+          if params.any?
+            s << " - #{params.join(' ')}"
+          end
+        end
+        logger.info(msg)
+      end
+
       def s3
         @s3 ||= S3::Service
                   .new(
@@ -37,6 +47,11 @@ module Alces
 
       def gpg
         @gpg ||= GPGME::Crypto.new
+      end
+
+      private
+      def logger
+        @logger ||= Logger.new(config.log_path)
       end
     end
   end
