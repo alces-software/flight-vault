@@ -6,6 +6,10 @@ module Alces
     module Commands
       class Setup
         def setup(args, opts)
+          if Process.uid == 0
+            prompt.error "Running as root - you should use your own user!"
+            return
+          end
           # detect if there's already a key
           k = Vault.manager.key
           if k
