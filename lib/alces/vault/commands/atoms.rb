@@ -10,6 +10,7 @@ module Alces
             prompt.warn "Running as root - you should use your own user!"
           elsif STDOUT.stat.uid == 0
             prompt.warn "Terminal is owned by root (and you aren't root), password entry may fail!"
+            prompt.warn "Are you running under `su` or `sudo`? Don't. :)"
           end
           if Vault.manager.key.nil?
             prompt.error "No key detected; try 'vault setup'"
