@@ -6,6 +6,7 @@ require 'alces/vault/config'
 require 'gpgme'
 require 's3'
 require 'logger'
+require 'etc'
 
 module Alces
   module Vault
@@ -52,6 +53,10 @@ module Alces
       private
       def logger
         @logger ||= Logger.new(config.log_path)
+      end
+
+      def uname
+        @uname ||= Etc.getlogin
       end
     end
   end
