@@ -12,10 +12,7 @@ module Alces
       delegate :[]=, :[], :keys, :delete, to: :@data
 
       def save
-        Whirly.start(spinner: 'star',
-                     remove_after_stop: true,
-                     append_newline: false,
-                     status: Paint['Storing vault data', '#2794d8']) do
+        whirly('Storing vault data') do
           obj = vault_bucket.objects.build('vault/vault.dat')
           obj.content = encrypted_data
           obj.save
@@ -97,6 +94,19 @@ module Alces
       end
 
       private
+      def whirly(message, &block)
+        if $stdout.isatty
+          Whirly.start(spinner: 'star',
+                       remove_after_stop: true,
+                       append_newline: false,
+                       status: Paint[message, '#2794d8'],
+                       &block)
+        else
+          block.call
+        end
+      end
+
+
       def encrypted_data
         # ensure all pubkeys are imported
         Vault.manager.import_keys
@@ -108,10 +118,7 @@ module Alces
       def load
         Vault.log('load')
         retval = nil
-        Whirly.start(spinner: 'star',
-                     remove_after_stop: true,
-                     append_newline: false,
-                     status: Paint['Fetching vault data', '#2794d8']) do
+        whirly('Fetching vault data') do
           encrypted_data = vault_file.content
           retval = YAML.load(Vault.gpg.decrypt(encrypted_data).read)
         end
