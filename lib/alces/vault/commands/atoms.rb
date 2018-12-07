@@ -89,10 +89,14 @@ module Alces
                         end
               if TTY::Editor.open(file.path, content: content)
                 content = File.read(file.path).chomp
-                yaml_content = YAML.load(content) rescue nil
+                yaml_content = YAML.load(content) rescue :invalid
                 data.set(
                   k,
                   if content[0..3] == "---\n"
+                    if yaml_content == :invalid
+                      prompt.error "Invalid YAML:\n\n#{content}\n\nModification not made, please try again."
+                      return
+                    end
                     yaml_content
                   elsif yaml_content.is_a?(Hash)
                     yaml_content
