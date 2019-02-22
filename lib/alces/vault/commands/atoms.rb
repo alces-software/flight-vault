@@ -43,10 +43,14 @@ module Alces
             return
           end
           k = args[0]
-          Vault.data do |data|
-            data.set(k, nil)
+          Vault.with_lock do
+            Vault.data do |data|
+              data.set(k, nil)
+            end
           end
           prompt.ok "Atom removed from vault: #{k}"
+        rescue LockActiveError
+          prompt.error "Vault is currently locked (#{$!.message})"
         rescue GPGME::Error::DecryptFailed
           prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         end
@@ -57,8 +61,10 @@ module Alces
             return
           end
 
-          Vault.data.save
+          Vault.with_lock { Vault.data.save }
           prompt.ok "Vault now available to: #{Vault.manager.recipients.join(", ")}"
+        rescue LockActiveError
+          prompt.error "Vault is currently locked (#{$!.message})"
         rescue GPGME::Error::DecryptFailed
           prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         end
@@ -75,41 +81,45 @@ module Alces
             return
           end
           k = args[0]
-          Vault.data do |data|
-            file = Tempfile.new('vault')
-            begin
-              atom = data.fetch(k)
-              content = case atom
-                        when String
-                          atom
-                        when NilClass
-                          ''
-                        else
-                          atom.to_yaml
-                        end
-              if TTY::Editor.open(file.path, content: content)
-                content = File.read(file.path).chomp
-                yaml_content = YAML.load(content) rescue :invalid
-                data.set(
-                  k,
-                  if content[0..3] == "---\n"
-                    if yaml_content == :invalid
-                      prompt.error "Invalid YAML:\n\n#{content}\n\nModification not made, please try again."
-                      return
+          Vault.with_lock do
+            Vault.data do |data|
+              file = Tempfile.new('vault')
+              begin
+                atom = data.fetch(k)
+                content = case atom
+                          when String
+                            atom
+                          when NilClass
+                            ''
+                          else
+                            atom.to_yaml
+                          end
+                if TTY::Editor.open(file.path, content: content)
+                  content = File.read(file.path).chomp
+                  yaml_content = YAML.load(content) rescue :invalid
+                  data.set(
+                    k,
+                    if content[0..3] == "---\n"
+                      if yaml_content == :invalid
+                        prompt.error "Invalid YAML:\n\n#{content}\n\nModification not made, please try again."
+                        return
+                      end
+                      yaml_content
+                    elsif yaml_content.is_a?(Hash)
+                      yaml_content
+                    else
+                      content
                     end
-                    yaml_content
-                  elsif yaml_content.is_a?(Hash)
-                    yaml_content
-                  else
-                    content
-                  end
-                )
+                  )
+                end
+              ensure
+                file.unlink
               end
-            ensure
-              file.unlink
             end
           end
           prompt.ok "Atom updated: #{k}"
+        rescue LockActiveError
+          prompt.error "Vault is currently locked (#{$!.message})"
         rescue GPGME::Error::DecryptFailed
           prompt.error "Access denied; has 'vault touch' been executed by an existing user?"
         rescue TTY::Reader::InputInterrupt
