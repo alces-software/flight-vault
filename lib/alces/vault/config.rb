@@ -19,6 +19,10 @@ module Alces
         @data[:log_path] ||= "/var/log/flight-vault.log"
       end
 
+      def lock_file
+        @data[:lock_file] ||= "/var/run/lock/flight-vault/lock"
+      end
+
       private
       def root
         @root ||= File.join(File.dirname(__FILE__),'..','..','..')

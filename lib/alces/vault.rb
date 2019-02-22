@@ -10,6 +10,8 @@ require 'etc'
 
 module Alces
   module Vault
+    LockActiveError = Class.new(RuntimeError)
+
     class << self
       def data(&block)
         @data ||= VaultData.new
@@ -18,6 +20,22 @@ module Alces
           @data.save
         else
           @data
+        end
+      end
+
+      def with_lock(&block)
+        lock_file = config.lock_file
+        if File.exist?(lock_file)
+          raise LockActiveError, File.read(lock_file).chomp
+        else
+          begin
+            File.open(lock_file,'w') do |f|
+              f.puts "#{uname} - #{$$}"
+            end
+            block.call
+          ensure
+            File.unlink(lock_file)
+          end
         end
       end
 
