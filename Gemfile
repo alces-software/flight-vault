@@ -12,6 +12,6 @@ source 'https://rubygems.org' do
   gem 'tty-prompt'
   gem 'tty-editor'
   gem 'zxcvbn-ruby'
-  gem 's3'
+  gem 'aws-sdk-s3'
   gem 'gpgme'
 end

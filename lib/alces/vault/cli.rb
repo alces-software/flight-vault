@@ -9,7 +9,7 @@ module Alces
 
       def run
         program :name, 'alces vault'
-        program :version, '0.0.1'
+        program :version, '1.1.0'
         program :description, 'Alces Flight vault management'
 
         command :show do |c|

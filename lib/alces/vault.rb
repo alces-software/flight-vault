@@ -4,7 +4,8 @@ require 'alces/vault/manager'
 require 'alces/vault/config'
 
 require 'gpgme'
-require 's3'
+require 'aws-sdk-s3'
+
 require 'logger'
 require 'etc'
 
@@ -57,10 +58,11 @@ module Alces
       end
 
       def s3
-        @s3 ||= S3::Service
+        @s3 ||= Aws::S3::Resource
                   .new(
                     access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-                    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+                    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
+                    region: 'eu-west-1'
                   )
       end
 
@@ -76,14 +78,6 @@ module Alces
       def uname
         @uname ||= Etc.getlogin
       end
-    end
-  end
-end
-
-module S3
-  class Object
-    def bucket_request(*a)
-      bucket.send(:bucket_request, *a)
     end
   end
 end

@@ -13,10 +13,11 @@ module Alces
 
       def save
         whirly('Storing vault data') do
-          obj = vault_bucket.objects.build('vault/vault.dat')
-          obj.content = encrypted_data
-          obj.save
-          obj.copy(key: "vault/vault-backup-#{Time.now.strftime('%Y-%m-%d-%H%M')}.dat")
+          obj = vault_bucket.object('vault/vault.dat')
+          obj.upload_stream do |write_stream|
+            write_stream << encrypted_data
+          end
+          save_backups
         end
         Vault.log('save')
       end
@@ -119,20 +120,68 @@ module Alces
         Vault.log('load')
         retval = nil
         whirly('Fetching vault data') do
-          encrypted_data = vault_file.content
+          encrypted_data = vault_file.body
           retval = YAML.load(Vault.gpg.decrypt(encrypted_data).read)
         end
         retval
-      rescue S3::Error::NoSuchKey
+      rescue Aws::S3::Errors::NoSuchKey
         {}
       end
 
+      def save_backups
+        fn = "vault-backup-#{Time.now.strftime('%Y-%m-%d-%H%M')}.dat"
+        begin
+          Vault.s3.client.copy_object(
+            bucket: Vault.config.primary_bucket_name,
+            copy_source: "/#{Vault.config.primary_bucket_name}/vault/vault.dat",
+            key: "vault/#{fn}"
+          )
+        rescue
+          Vault.log('backup', "Failed: #{$!.message}")
+          if $!.is_a?(Aws::S3::Errors::NoSuchBucket)
+            puts "warning: could not make backup: #{$!.message}"
+          else
+            raise
+          end
+        end
+        if Vault.config.mirror_bucket_name != ''
+          begin
+            Vault.s3.client.copy_object(
+              bucket: Vault.config.mirror_bucket_name,
+              copy_source: "/#{Vault.config.primary_bucket_name}/vault/vault.dat",
+              key: "vault/#{fn}"
+            )
+          rescue
+            Vault.log('mirror', "Failed: #{$!.message}")
+            if $!.is_a?(Aws::S3::Errors::NoSuchBucket)
+              puts "warning: could not mirror backup: #{$!.message}"
+            else
+              raise
+            end
+          end
+        end
+        if Vault.config.local_backup_path != ''
+          begin
+            File.open(File.join(Vault.config.local_backup_path, fn), 'w') do |f|
+              f.write(encrypted_data)
+            end
+          rescue
+            Vault.log('localsave', "Failed: #{$!.message}")
+            if $!.is_a?(Errno::ENOENT)
+              puts "warning: could not make local save: #{$!.message}"
+            else
+              raise
+            end
+          end
+        end
+      end
+
       def vault_file
-        vault_bucket.objects.find('vault/vault.dat')
+        vault_bucket.object('vault/vault.dat').get
       end
 
       def vault_bucket
-        Vault.s3.bucket('alces')
+        Vault.s3.bucket(Vault.config.primary_bucket_name)
       end
     end
   end
